@@ -58,7 +58,7 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Run BFS"
-            android:textSize="16sp" />
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/btnDijkstra"
@@ -66,7 +66,15 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Run Dijkstra"
-            android:textSize="16sp" />
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnAStar"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Run A*"
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/btnReset"
@@ -74,9 +82,8 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Reset"
-            android:textSize="16sp" />
+            android:textSize="14sp" />
     </LinearLayout>
-
 
     <LinearLayout
         android:id="@+id/timeContainer"
@@ -90,14 +97,21 @@
             android:id="@+id/tvBfsTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="BFS Time: 0 sec"
+            android:text="BFS Time: 0 ms"
             android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tvDijkstraTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Dijkstra Time: 0 sec"
+            android:text="Dijkstra Time: 0 ms"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvAStarTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="A* Time: 0 ms"
             android:textSize="16sp" />
 
         <TextView

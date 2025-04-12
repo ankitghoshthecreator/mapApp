@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var graphView: GraphView
@@ -13,6 +12,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTo: TextView
     private lateinit var tvBfsTime: TextView
     private lateinit var tvDijkstraTime: TextView
+    private lateinit var tvAStarTime: TextView
     private lateinit var tvPathTime: TextView
 
     private var startNode: Node? = null
@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
         tvTo = findViewById(R.id.tvTo)
         tvBfsTime = findViewById(R.id.tvBfsTime)
         tvDijkstraTime = findViewById(R.id.tvDijkstraTime)
+        tvAStarTime = findViewById(R.id.tvAStarTime)
         tvPathTime = findViewById(R.id.tvPathTime)
 
         graphView.setOnTouchListener { _, event ->
@@ -36,11 +37,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnBFS).setOnClickListener {
-            calculatePath(::bfs)
+            runBFS()
         }
 
         findViewById<Button>(R.id.btnDijkstra).setOnClickListener {
-            calculatePath(::dijkstra)
+            runDijkstra()
+        }
+
+        findViewById<Button>(R.id.btnAStar).setOnClickListener {
+            runAStar()
         }
 
         // Add Reset button functionality
@@ -49,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // New reset function
+    // Reset function
     private fun resetAll() {
         // Reset node selections
         startNode = null
@@ -62,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         tvTo.text = "To:"
         tvBfsTime.text = "BFS Time: 0 ms"
         tvDijkstraTime.text = "Dijkstra Time: 0 ms"
+        tvAStarTime.text = "A* Time: 0 ms"
         tvPathTime.text = "Path Time: 0 sec"
 
         // Reset path animation
@@ -84,6 +90,7 @@ class MainActivity : AppCompatActivity() {
                 // Reset times when new selection starts
                 tvBfsTime.text = "BFS Time: 0 ms"
                 tvDijkstraTime.text = "Dijkstra Time: 0 ms"
+                tvAStarTime.text = "A* Time: 0 ms"
                 tvPathTime.text = "Path Time: 0 sec"
             } else {
                 endNode = selectedNode
@@ -94,153 +101,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun calculatePath(algorithm: (String, String) -> Pair<List<Node>, Long>) {
+    private fun runBFS() {
         if (startNode == null || endNode == null) return
 
-        val (path, timeTaken) = algorithm(startNode!!.id, endNode!!.id)
+        val result = bfs.findPath(graphView.nodes, graphView.edges, startNode!!.id, endNode!!.id)
+        val path = result.first
+        val timeTaken = result.second
 
         graphView.animatePath(path, 1000L)
-
-        // Update algorithm execution time
-        when (algorithm) {
-            ::bfs -> tvBfsTime.text = "BFS Time: ${timeTaken} ms"
-            ::dijkstra -> tvDijkstraTime.text = "Dijkstra Time: ${timeTaken} ms"
-        }
-
-        // Update path time (1 second per edge)
+        tvBfsTime.text = "BFS Time: ${timeTaken} ms"
         tvPathTime.text = "Path Time: ${path.size - 1} sec"
-
-        // Don't reset selection - keep nodes highlighted
-        // Only reset when a new start node is selected
     }
 
-    private fun bfs(startId: String, endId: String): Pair<List<Node>, Long> {
-        val startTime = System.currentTimeMillis()
+    private fun runDijkstra() {
+        if (startNode == null || endNode == null) return
 
-        // Create adjacency list from edges
-        val adjacencyMap = mutableMapOf<String, MutableList<String>>()
-        graphView.edges.forEach { edge ->
-            if (!adjacencyMap.containsKey(edge.from)) {
-                adjacencyMap[edge.from] = mutableListOf()
-            }
-            adjacencyMap[edge.from]?.add(edge.to)
+        val result = dijkstra.findPath(graphView.nodes, graphView.edges, startNode!!.id, endNode!!.id)
+        val path = result.first
+        val timeTaken = result.second
 
-            // For undirected graph (can go both ways)
-            if (!adjacencyMap.containsKey(edge.to)) {
-                adjacencyMap[edge.to] = mutableListOf()
-            }
-            adjacencyMap[edge.to]?.add(edge.from)
-        }
-
-        // BFS implementation
-        val queue: Queue<String> = LinkedList()
-        val visited = mutableSetOf<String>()
-        val parentMap = mutableMapOf<String, String>()
-
-        queue.add(startId)
-        visited.add(startId)
-
-        while (queue.isNotEmpty()) {
-            val current = queue.poll()
-
-            if (current == endId) break
-
-            adjacencyMap[current]?.forEach { neighbor ->
-                if (neighbor !in visited) {
-                    visited.add(neighbor)
-                    parentMap[neighbor] = current
-                    queue.add(neighbor)
-                }
-            }
-        }
-
-        // Reconstruct path
-        val path = mutableListOf<String>()
-        var current = endId
-
-        while (current != startId) {
-            path.add(0, current)
-            current = parentMap[current] ?: break
-        }
-
-        path.add(0, startId)
-
-        // Convert to Node objects
-        val nodePath = path.map { nodeId ->
-            graphView.nodes.first { it.id == nodeId }
-        }
-
-        return Pair(nodePath, System.currentTimeMillis() - startTime)
+        graphView.animatePath(path, 1000L)
+        tvDijkstraTime.text = "Dijkstra Time: ${timeTaken} ms"
+        tvPathTime.text = "Path Time: ${path.size - 1} sec"
     }
 
-    private fun dijkstra(startId: String, endId: String): Pair<List<Node>, Long> {
-        val startTime = System.currentTimeMillis()
+    private fun runAStar() {
+        if (startNode == null || endNode == null) return
 
-        // Create adjacency list with weights from edges
-        val adjacencyMap = mutableMapOf<String, MutableList<Pair<String, Int>>>()
-        graphView.edges.forEach { edge ->
-            if (!adjacencyMap.containsKey(edge.from)) {
-                adjacencyMap[edge.from] = mutableListOf()
-            }
-            adjacencyMap[edge.from]?.add(Pair(edge.to, edge.weight))
+        val result = aStar.findPath(graphView.nodes, graphView.edges, startNode!!.id, endNode!!.id)
+        val path = result.first
+        val timeTaken = result.second
 
-            // For undirected graph (can go both ways)
-            if (!adjacencyMap.containsKey(edge.to)) {
-                adjacencyMap[edge.to] = mutableListOf()
-            }
-            adjacencyMap[edge.to]?.add(Pair(edge.from, edge.weight))
-        }
-
-        // Dijkstra implementation
-        val distances = mutableMapOf<String, Int>()
-        val parentMap = mutableMapOf<String, String>()
-        val visited = mutableSetOf<String>()
-
-        // Priority queue for Dijkstra
-        val pq = PriorityQueue<Pair<String, Int>>(compareBy { it.second })
-
-        // Initialize distances
-        graphView.nodes.forEach { node ->
-            distances[node.id] = if (node.id == startId) 0 else Int.MAX_VALUE
-        }
-
-        pq.add(Pair(startId, 0))
-
-        while (pq.isNotEmpty()) {
-            val (current, dist) = pq.poll()
-
-            if (current == endId) break
-
-            if (current in visited) continue
-            visited.add(current)
-
-            adjacencyMap[current]?.forEach { (neighbor, weight) ->
-                val newDist = dist + weight
-                if (newDist < (distances[neighbor] ?: Int.MAX_VALUE)) {
-                    distances[neighbor] = newDist
-                    parentMap[neighbor] = current
-                    pq.add(Pair(neighbor, newDist))
-                }
-            }
-        }
-
-        // Reconstruct path
-        val path = mutableListOf<String>()
-        var current = endId
-
-        while (current != startId) {
-            path.add(0, current)
-            current = parentMap[current] ?: break
-        }
-
-        path.add(0, startId)
-
-        // Convert to Node objects
-        val nodePath = path.map { nodeId ->
-            graphView.nodes.first { it.id == nodeId }
-        }
-
-        return Pair(nodePath, System.currentTimeMillis() - startTime)
+        graphView.animatePath(path, 1000L)
+        tvAStarTime.text = "A* Time: ${timeTaken} ms"
+        tvPathTime.text = "Path Time: ${path.size - 1} sec"
     }
 }
-
